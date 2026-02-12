@@ -320,11 +320,51 @@
             const area = document.getElementById('area');
             const question = document.getElementById('question');
 
-            // 随机位移
+            // 获取yesBtn的实际位置和大小（考虑transform）
+            const areaRect = area.getBoundingClientRect();
+            const yesBtnRect = yesBtn.getBoundingClientRect();
+            
+            // 计算yesBtn在area内的相对位置
+            const yesBtnLeft = yesBtnRect.left - areaRect.left;
+            const yesBtnTop = yesBtnRect.top - areaRect.top;
+            const yesBtnRight = yesBtnLeft + yesBtnRect.width;
+            const yesBtnBottom = yesBtnTop + yesBtnRect.height;
+            
+            // 添加一些边距，确保不会太靠近
+            const margin = 10;
+            const yesBtnSafeLeft = yesBtnLeft - margin;
+            const yesBtnSafeTop = yesBtnTop - margin;
+            const yesBtnSafeRight = yesBtnRight + margin;
+            const yesBtnSafeBottom = yesBtnBottom + margin;
+
+            // 随机位移，避免与yesBtn重叠
             const maxX = area.clientWidth - noBtn.offsetWidth;
             const maxY = area.clientHeight - noBtn.offsetHeight;
-            const randomX = Math.max(0, Math.min(Math.random() * maxX, maxX));
-            const randomY = Math.max(0, Math.min(Math.random() * maxY, maxY));
+            
+            let randomX, randomY;
+            let findAttempts = 0;
+            const maxFindAttempts = 50; // 最多尝试50次找到不重叠的位置
+            
+            do {
+                randomX = Math.max(0, Math.min(Math.random() * maxX, maxX));
+                randomY = Math.max(0, Math.min(Math.random() * maxY, maxY));
+                findAttempts++;
+                
+                // 检查是否与yesBtn重叠
+                const noBtnRight = randomX + noBtn.offsetWidth;
+                const noBtnBottom = randomY + noBtn.offsetHeight;
+                
+                const overlaps = !(
+                    noBtnRight < yesBtnSafeLeft || 
+                    randomX > yesBtnSafeRight || 
+                    noBtnBottom < yesBtnSafeTop || 
+                    randomY > yesBtnSafeBottom
+                );
+                
+                if (!overlaps || findAttempts >= maxFindAttempts) {
+                    break;
+                }
+            } while (true);
 
             noBtn.style.left = randomX + 'px';
             noBtn.style.top = randomY + 'px';
