@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="qie.png" type="image/png">
+    <title>Happy Valentine <3</title>
+    <link href="https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&display=swap" rel="stylesheet">
+    <style>
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #fff0f3;
+            background-image: 
+                linear-gradient(rgba(255, 208, 215, 0.5) 50px, transparent 2px),
+                linear-gradient(90deg, rgba(255, 208, 215, 0.5) 50px, transparent 2px);
+            background-size: 100px 100px;
+            font-family: 'ZCOOL KuaiLe', cursive;
+        }
+
+        /* 音乐按钮样式 */
+        #musicBtn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 50px;
+            height: 50px;
+            background: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(255, 179, 193, 0.4);
+            z-index: 1000;
+            border: 2px solid #ffccd5;
+            overflow: hidden;
+        }
+
+        #musicGif {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            opacity: 0.6;
+            transition: opacity 0.3s;
+        }
+
+        @keyframes rotating {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .music-on { animation: rotating 3s linear infinite; border-color: #ff758f !important; }
+        .music-on img { opacity: 1 !important; }
+
+        /* 面板/纸张样式 */
+        .panel {
+            background: white;
+            background-image: linear-gradient(#f0f0f0 1px, transparent 1px);
+            background-size: 100% 30px;
+            background-attachment: local;
+            padding: 40px 30px;
+            border-radius: 15px;
+            box-shadow: 2px 5px 20px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            position: relative;
+            width: 360px;
+            height: 520px;
+            border: 1px solid #e0e0e0;
+            overflow: visible; 
+        }
+
+        .panel::before {
+            content: "";
+            position: absolute;
+            top: -18px;
+            left: 50%;
+            transform: translateX(-50%) rotate(-1deg);
+            width: 120px;
+            height: 35px;
+            background: rgba(255, 182, 193, 0.7);
+            border-radius: 2px;
+            z-index: 10;
+        }
+
+        h1 { 
+            color: #4a4a4a; 
+            font-size: 1.6rem; 
+            min-height: 60px; 
+            line-height: 1.6;
+            display: inline-block;
+            padding: 0 10px;
+        }
+
+        .gif-container { height: 180px; display: flex; justify-content: center; align-items: center; margin-bottom: 10px; }
+        .gif-container img { width: 160px; }
+
+        .buttons-area { position: relative; width: 100%; height: 230px; margin-top: 10px; }
+
+        button {
+            padding: 10px 25px;
+            font-size: 1.2rem;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-family: inherit;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 4px 0px rgba(0,0,0,0.1);
+        }
+
+        #yesBtn { background-color: #ff758f; color: white; position: absolute; left: 50%; top: 25%; transform: translate(-50%, -50%); z-index: 100; }
+        #yesBtn:active { transform: translate(-50%, -48%); box-shadow: none; }
+
+        #noBtn { background-color: #f8f9fa; color: #adb5bd; position: absolute; left: 50%; top: 65%; transform: translate(-50%, -50%); z-index: 50; border: 1px solid #dee2e6; }
+
+        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+        @keyframes colorChange { 0% { color: #ff758f; } 50% { color: #ffacba; } 100% { color: #ff758f; } }
+
+        #question { animation: bounce 2s ease-in-out infinite; }
+        .letter { display: inline-block; animation: wave 0.6s infinite alternate; }
+        @keyframes wave { from { transform: translateY(0); } to { transform: translateY(-5px); } }
+        .rainbow-text { animation: colorChange 1s infinite; }
+    </style>
+</head>
+<body>
+    <audio id="bgm" loop src="bgm.mp3" preload="auto"></audio>
+    <audio id="noEffect" src="no.mp3" preload="auto"></audio>
+    <audio id="yesMusic" loop src="bgm2.mp3" preload="auto"></audio>
+
+    <div id="musicBtn" onclick="toggleMusic()">
+        <img id="musicGif" src="happy.gif">
+    </div>
+
+    <div class="panel" id="mainPanel">
+        <div class="gif-container">
+            <img id="displayGif" src="hello.png">
+        </div>
+
+        <h1 id="question">亲爱的小章同学<br>你要不要做我的Valentine？</h1>
+
+        <div class="buttons-area" id="area">
+            <button id="yesBtn" onclick="celebrate()">好呀！</button>
+            <button id="noBtn" onmouseover="moveAndShrink()" onclick="moveAndShrink()">不要</button>
+        </div>
+    </div>
+
+    <script>
+        // 获取音频和按钮对象
+        const bgm = document.getElementById('bgm');
+        const noEffect = document.getElementById('noEffect');
+        const yesMusic = document.getElementById('yesMusic');
+        const musicBtn = document.getElementById('musicBtn');
+        yesMusic.volume = 0.2;
+        noEffect.volume = 1;
+        bgm.volume = 0.2;
+        let yesScale = 1;
+        let noScale = 1;
+        let attempts = 0;
+
+        // 确保音频元素正确初始化
+        bgm.addEventListener('canplaythrough', () => {
+            console.log('BGM 已加载完成');
+        });
+        noEffect.addEventListener('canplaythrough', () => {
+            console.log('no音效 已加载完成');
+        });
+        noEffect.addEventListener('error', (e) => {
+            console.error('no音效加载错误:', e, noEffect.error);
+        });
+        bgm.addEventListener('error', (e) => {
+            console.error('BGM加载错误:', e, bgm.error);
+        });
+
+        // 页面加载完成后检查音频状态
+        window.addEventListener('load', () => {
+            console.log('页面加载完成');
+            console.log('noEffect 状态:', {
+                readyState: noEffect.readyState,
+                networkState: noEffect.networkState,
+                error: noEffect.error,
+                src: noEffect.src
+            });
+            console.log('bgm 状态:', {
+                readyState: bgm.readyState,
+                networkState: bgm.networkState,
+                error: bgm.error,
+                src: bgm.src
+            });
+        });
+
+        // 文字波浪化函数
+        function wrapText(text) {
+            return text.split('').map((char, i) => 
+                `<span class="letter" style="animation-delay: ${i * 0.1}s">${char}</span>`
+            ).join('');
+        }
+
+        // 统一控制音乐图标旋转
+        function updateMusicIcon(isPlaying) {
+            if (isPlaying) {
+                musicBtn.classList.add('music-on');
+            } else {
+                musicBtn.classList.remove('music-on');
+            }
+        }
+
+        // 音乐手动开关
+        function toggleMusic() {
+            const currentActive = attempts === -1 ? yesMusic : bgm; 
+            if (currentActive.paused) {
+                currentActive.play();
+                updateMusicIcon(true);
+            } else {
+                currentActive.pause();
+                updateMusicIcon(false);
+            }
+        }
+
+        function moveAndShrink() {
+            console.log('moveAndShrink 被调用');
+            console.log('noEffect readyState:', noEffect.readyState);
+            console.log('bgm readyState:', bgm.readyState);
+            
+            // 第一次躲避时尝试播放 BGM（解决浏览器自动播放限制）
+            if (bgm.paused && attempts >= 0) {
+                const bgmPromise = bgm.play();
+                if (bgmPromise !== undefined) {
+                    bgmPromise.then(() => {
+                        console.log("BGM 播放成功");
+                        updateMusicIcon(true);
+                    }).catch(e => {
+                        console.error("BGM播放失败:", e);
+                    });
+                } else {
+                    updateMusicIcon(true);
+                }
+            }
+
+            // 播放拒绝音效 - hover时立即播放（hover是用户交互）
+            // 重置并播放
+            noEffect.pause();
+            noEffect.currentTime = 0;
+            
+            // 直接播放（hover事件是用户交互，浏览器应该允许播放）
+            noEffect.play().then(() => {
+                console.log("no音效 播放成功");
+            }).catch(e => {
+                console.error("no音效播放失败:", e);
+                // 如果失败，可能是音频未加载，尝试加载后播放
+                if (noEffect.readyState < 2) {
+                    noEffect.load();
+                    noEffect.addEventListener('canplay', () => {
+                        noEffect.play().catch(e2 => {
+                            console.error("加载后播放仍然失败:", e2);
+                        });
+                    }, { once: true });
+                }
+            });
+
+            const noBtn = document.getElementById('noBtn');
+            const yesBtn = document.getElementById('yesBtn');
+            const area = document.getElementById('area');
+            const question = document.getElementById('question');
+
+            // 随机位移
+            const maxX = area.clientWidth - noBtn.offsetWidth;
+            const maxY = area.clientHeight - noBtn.offsetHeight;
+            const randomX = Math.max(0, Math.min(Math.random() * maxX, maxX));
+            const randomY = Math.max(0, Math.min(Math.random() * maxY, maxY));
+
+            noBtn.style.left = randomX + 'px';
+            noBtn.style.top = randomY + 'px';
+
+            // 按钮缩放
+            attempts++;
+            yesScale += 0.4;
+            if (noScale > 0.5) noScale -= 0.1;
+
+            yesBtn.style.transform = `translate(-50%, -50%) scale(${yesScale})`;
+            noBtn.style.transform = `scale(${noScale})`;
+
+            // 动态文案
+            const texts = ["点错了嘛？", "我会难过哒", "不许拒绝！", "快点好呀！", "哼！"];
+            if (attempts <= texts.length) {
+                const rawText = texts[attempts - 1];
+                question.innerHTML = wrapText(rawText); 
+            }
+        }
+
+        // 核心逻辑：答应、音乐切换、重绘页面
+        function celebrate() {
+            // 1. 切换音乐
+            bgm.pause();
+            yesMusic.play().catch(e => console.log("音乐播放受阻"));
+            updateMusicIcon(true);
+            
+            // 2. 标记成功状态
+            attempts = -1; 
+
+            // 3. 页面重绘内容
+            const panel = document.getElementById('mainPanel');
+            panel.innerHTML = `
+                <div style="padding-top: 40px; border-radius: 15px;">
+                    <h1 style="font-size: 2rem; color: #ff758f; animation: bounce 0.5s infinite; padding: 0 10px;">我就知道你会答应哒！✨</h1>
+                    <div style="margin-top:20px;">
+                        <img src="jump.gif" style="width:180px;">
+                    </div>
+                    <p class="rainbow-text" style="margin-top:25px; font-size:1.8rem; font-weight:bold;">💖 情人节快乐！💖</p>
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>
