@@ -114,7 +114,36 @@
         #yesBtn { background-color: #ff758f; color: white; position: absolute; left: 50%; top: 25%; transform: translate(-50%, -50%); z-index: 100; }
         #yesBtn:active { transform: translate(-50%, -48%); box-shadow: none; }
 
-        #noBtn { background-color: #f8f9fa; color: #adb5bd; position: absolute; left: 50%; top: 65%; transform: translate(-50%, -50%); z-index: 50; border: 1px solid #dee2e6; }
+        #noBtn { 
+            background-color: #f8f9fa; 
+            color: #adb5bd; 
+            position: absolute; 
+            left: 50%; 
+            top: 65%; 
+            transform: translate(-50%, -50%); 
+            z-index: 50; 
+            border: 1px solid #dee2e6;
+            animation: pulse 1.5s ease-in-out infinite, glow 1.5s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); }
+            50% { transform: translate(-50%, -50%) scale(1.1); }
+        }
+
+        @keyframes glow {
+            0%, 100% { 
+                box-shadow: 0 0 5px rgba(255, 117, 143, 0.5),
+                            0 0 10px rgba(255, 117, 143, 0.3),
+                            0 0 15px rgba(255, 117, 143, 0.2);
+            }
+            50% { 
+                box-shadow: 0 0 10px rgba(255, 142, 163, 0.8),
+                            0 0 20px rgba(255, 117, 143, 0.6),
+                            0 0 30px rgba(255, 117, 143, 0.4),
+                            0 0 40px rgba(255, 117, 143, 0.2);
+            }
+        }
 
         @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
         @keyframes colorChange { 0% { color: #ff758f; } 50% { color: #ffacba; } 100% { color: #ff758f; } }
@@ -143,7 +172,7 @@
 
         <div class="buttons-area" id="area">
             <button id="yesBtn" onclick="celebrate()">好呀！</button>
-            <button id="noBtn" onmouseover="moveAndShrink()" onclick="moveAndShrink()">不要</button>
+            <button id="noBtn" onmouseover="handleNoHover()" onclick="handleNoClick()">不要</button>
         </div>
     </div>
 
@@ -159,6 +188,7 @@
         let yesScale = 1;
         let noScale = 1;
         let attempts = 0;
+        let hasClickedNo = false; // 标记是否已经点击过"不要"按钮
 
         // 确保音频元素正确初始化
         bgm.addEventListener('canplaythrough', () => {
@@ -219,12 +249,9 @@
             }
         }
 
-        function moveAndShrink() {
-            console.log('moveAndShrink 被调用');
-            console.log('noEffect readyState:', noEffect.readyState);
-            console.log('bgm readyState:', bgm.readyState);
-            
-            // 第一次躲避时尝试播放 BGM（解决浏览器自动播放限制）
+        // 播放音频的通用函数
+        function playAudio() {
+            // 第一次交互时尝试播放 BGM
             if (bgm.paused && attempts >= 0) {
                 const bgmPromise = bgm.play();
                 if (bgmPromise !== undefined) {
@@ -239,17 +266,14 @@
                 }
             }
 
-            // 播放拒绝音效 - hover时立即播放（hover是用户交互）
-            // 重置并播放
+            // 播放拒绝音效
             noEffect.pause();
             noEffect.currentTime = 0;
             
-            // 直接播放（hover事件是用户交互，浏览器应该允许播放）
             noEffect.play().then(() => {
                 console.log("no音效 播放成功");
             }).catch(e => {
                 console.error("no音效播放失败:", e);
-                // 如果失败，可能是音频未加载，尝试加载后播放
                 if (noEffect.readyState < 2) {
                     noEffect.load();
                     noEffect.addEventListener('canplay', () => {
@@ -259,7 +283,38 @@
                     }, { once: true });
                 }
             });
+        }
 
+        // 处理hover事件：第一次hover只播放音频，不移动；之后hover才会移动
+        function handleNoHover() {
+            // 播放音频
+            playAudio();
+            
+            // 只有在点击过"不要"按钮后，hover才会让按钮跑走
+            if (hasClickedNo) {
+                moveAndShrink();
+            }
+        }
+
+        // 处理click事件：第一次点击时播放音频并移动，同时启用hover就跑的模式
+        function handleNoClick() {
+            // 播放音频（click是明确的用户交互，一定能播放）
+            playAudio();
+            
+            // 第一次点击时，标记已点击，并移除初始动画和定位
+            if (!hasClickedNo) {
+                hasClickedNo = true;
+                const noBtn = document.getElementById('noBtn');
+                noBtn.style.animation = 'none'; // 移除初始动画
+                noBtn.style.transform = 'scale(1)'; // 移除初始的translate定位
+            }
+            
+            // 执行移动和缩放
+            moveAndShrink();
+        }
+
+        // 移动和缩放按钮
+        function moveAndShrink() {
             const noBtn = document.getElementById('noBtn');
             const yesBtn = document.getElementById('yesBtn');
             const area = document.getElementById('area');
